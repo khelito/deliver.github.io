@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#2563eb">
+    <title>Assistant Livraison</title>
+    <link rel="manifest" href="data:application/json;base64,eyJuYW1lIjoiQXNzaXN0YW50IExpdnJhaXNvbiIsInNob3J0X25hbWUiOiJMaXZyYWlzb24iLCJzdGFydF91cmwiOiIuIiwiZGlzcGxheSI6InN0YW5kYWxvbmUiLCJiYWNrZ3JvdW5kX2NvbG9yIjoiI2ZmZmZmZiIsInRoZW1lX2NvbG9yIjoiIzI1NjNlYiIsImljb25zIjpbeyJzcmMiOiJkYXRhOmltYWdlL3N2Zyt4bWw7YmFzZTY0LFBITjJaeUI0Yld4dWN6MGlhSFIwY0RvdkwzZDNkeTUzTXk1dmNtY3ZNakF3TUM5emRtY2lJSGRwWkhSb1Btyz0iLCJzaXplcyI6IjE5Mng5MiIsInR5cGUiOiJpbWFnZS9wbmcifV19">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .card {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 28px;
+            text-align: center;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .upload-section {
+            text-align: center;
+            padding: 40px 20px;
+            border: 3px dashed #667eea;
+            border-radius: 15px;
+            background: #f8f9ff;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .upload-section:hover {
+            border-color: #764ba2;
+            background: #f0f1ff;
+        }
+
+        .upload-section.drag-over {
+            border-color: #764ba2;
+            background: #e8e9ff;
+            transform: scale(1.02);
+        }
+
+        .upload-icon {
+            font-size: 48px;
+            margin-bottom: 15px;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 15px;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn-secondary {
+            background: white;
+            color: #667eea;
+            border: 2px solid #667eea;
+            box-shadow: none;
+        }
+
+        .btn-secondary:hover {
+            background: #f8f9ff;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .delivery-card {
+            display: none;
+        }
+
+        .delivery-card.active {
+            display: block;
+        }
+
+        .progress {
+            text-align: center;
+            color: #667eea;
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 20px;
+        }
+
+        .delivery-info {
+            background: #f8f9ff;
+            padding: 25px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+        }
+
+        .info-row {
+            margin-bottom: 20px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #e5e7ff;
+        }
+
+        .info-row:last-child {
+            margin-bottom: 0;
+            padding-bottom: 0;
+            border-bottom: none;
+        }
+
+        .info-label {
+            font-size: 12px;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .info-value {
+            font-size: 18px;
+            color: #333;
+            font-weight: 500;
+            word-wrap: break-word;
+        }
+
+        .phone-value {
+            color: #667eea;
+            font-size: 20px;
+            font-weight: 600;
+        }
+
+        .btn-group {
+            display: grid;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .btn-navigate {
+            background: #10b981;
+            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);
+        }
+
+        .btn-navigate:hover {
+            box-shadow: 0 6px 20px rgba(16, 185, 129, 0.6);
+        }
+
+        .btn-call {
+            background: #3b82f6;
+            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
+        }
+
+        .btn-call:hover {
+            box-shadow: 0 6px 20px rgba(59, 130, 246, 0.6);
+        }
+
+        .btn-next {
+            background: linear-gradient(135deg, #f59e0b 0%, #ef4444 100%);
+            box-shadow: 0 4px 15px rgba(245, 158, 11, 0.4);
+        }
+
+        .btn-next:hover {
+            box-shadow: 0 6px 20px rgba(245, 158, 11, 0.6);
+        }
+
+        .btn-previous {
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);
+        }
+
+        .btn-previous:hover {
+            box-shadow: 0 6px 20px rgba(99, 102, 241, 0.6);
+        }
+
+        .completion-screen {
+            display: none;
+            text-align: center;
+            padding: 40px 20px;
+        }
+
+        .completion-screen.active {
+            display: block;
+        }
+
+        .completion-icon {
+            font-size: 80px;
+            margin-bottom: 20px;
+        }
+
+        .completion-screen h2 {
+            color: #10b981;
+            margin-bottom: 15px;
+            font-size: 32px;
+        }
+
+        .completion-screen p {
+            color: #666;
+            font-size: 18px;
+            margin-bottom: 30px;
+        }
+
+        .stats {
+            background: #f8f9ff;
+            padding: 20px;
+            border-radius: 15px;
+            margin: 20px 0;
+        }
+
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #e5e7ff;
+        }
+
+        .stat-row:last-child {
+            border-bottom: none;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 10px;
+            }
+
+            .card {
+                padding: 20px;
+            }
+
+            h1 {
+                font-size: 24px;
+            }
+        }
+
+        /* Animation de chargement */
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Écran d'import -->
+        <div id="uploadScreen" class="card">
+            <h1>🚚 Assistant Livraison</h1>
+            <p class="subtitle">Importez votre fichier Excel pour commencer</p>
+            
+            <div class="upload-section" id="dropZone">
+                <div class="upload-icon">📋</div>
+                <h3>Glissez votre fichier Excel ici</h3>
+                <p style="color: #666; margin: 15px 0;">ou</p>
+                <button class="btn" onclick="document.getElementById('fileInput').click()">
+                    Choisir un fichier
+                </button>
+                <input type="file" id="fileInput" accept=".xlsx,.xls,.csv">
+                <p style="color: #999; font-size: 12px; margin-top: 20px;">
+                    Format attendu: Colonne A = Nom | Colonne B = Adresse | Colonne C = Téléphone
+                </p>
+            </div>
+        </div>
+
+        <!-- Écran de livraison -->
+        <div id="deliveryScreen" class="card delivery-card">
+            <div class="progress" id="progressText">Livraison 1 sur 10</div>
+            
+            <div class="delivery-info">
+                <div class="info-row">
+                    <div class="info-label">👤 Client</div>
+                    <div class="info-value" id="clientName">-</div>
+                </div>
+                
+                <div class="info-row">
+                    <div class="info-label">📍 Adresse</div>
+                    <div class="info-value" id="clientAddress">-</div>
+                </div>
+                
+                <div class="info-row">
+                    <div class="info-label">📞 Téléphone</div>
+                    <div class="info-value phone-value" id="clientPhone">-</div>
+                </div>
+            </div>
+
+            <div class="btn-group">
+                <button class="btn btn-navigate" id="navigateBtn">
+                    🧭 Ouvrir la navigation
+                </button>
+                
+                <button class="btn btn-call" id="callBtn">
+                    📞 Appeler le client
+                </button>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                    <button class="btn btn-previous" id="previousBtn">
+                        ⬅️ Précédente
+                    </button>
+                    
+                    <button class="btn btn-next" id="nextBtn">
+                        Suivante ➡️
+                    </button>
+                </div>
+            </div>
+
+            <button class="btn btn-secondary" id="resetBtn" style="margin-top: 20px;">
+                ↩️ Nouveau fichier
+            </button>
+        </div>
+
+        <!-- Écran de fin -->
+        <div id="completionScreen" class="card completion-screen">
+            <div class="completion-icon">✅</div>
+            <h2>Tournée terminée !</h2>
+            <p>Bravo, toutes les livraisons ont été effectuées</p>
+            
+            <div class="stats">
+                <div class="stat-row">
+                    <span>Total de livraisons:</span>
+                    <strong id="totalDeliveries">0</strong>
+                </div>
+            </div>
+
+            <button class="btn" id="newRouteBtn">
+                🔄 Nouvelle tournée
+            </button>
+        </div>
+    </div>
+
+    <script>
+        let deliveries = [];
+        let currentIndex = 0;
+
+        // Éléments DOM
+        const uploadScreen = document.getElementById('uploadScreen');
+        const deliveryScreen = document.getElementById('deliveryScreen');
+        const completionScreen = document.getElementById('completionScreen');
+        const fileInput = document.getElementById('fileInput');
+        const dropZone = document.getElementById('dropZone');
+
+        // Gestion du drag & drop
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('drag-over');
+        });
+
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.classList.remove('drag-over');
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('drag-over');
+            const file = e.dataTransfer.files[0];
+            if (file) {
+                handleFile(file);
+            }
+        });
+
+        // Gestion du fichier
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                handleFile(file);
+            }
+        });
+
+        function handleFile(file) {
+            const reader = new FileReader();
+            
+            reader.onload = (e) => {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                    const jsonData = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
+                    
+                    // Parser les données (ignorer la première ligne si c'est un en-tête)
+                    deliveries = [];
+                    const startRow = jsonData[0] && typeof jsonData[0][0] === 'string' && 
+                                    (jsonData[0][0].toLowerCase().includes('nom') || 
+                                     jsonData[0][0].toLowerCase().includes('name')) ? 1 : 0;
+                    
+                    for (let i = startRow; i < jsonData.length; i++) {
+                        const row = jsonData[i];
+                        if (row[0] || row[1] || row[2]) { // Au moins une donnée présente
+                            deliveries.push({
+                                name: row[0] || 'Non renseigné',
+                                address: row[1] || 'Adresse non renseignée',
+                                phone: row[2] || 'Non renseigné'
+                            });
+                        }
+                    }
+
+                    if (deliveries.length === 0) {
+                        alert('Aucune donnée trouvée dans le fichier. Vérifiez le format.');
+                        return;
+                    }
+
+                    currentIndex = 0;
+                    startDeliveries();
+                } catch (error) {
+                    alert('Erreur lors de la lecture du fichier. Assurez-vous qu\'il s\'agit d\'un fichier Excel valide.');
+                    console.error(error);
+                }
+            };
+
+            reader.readAsArrayBuffer(file);
+        }
+
+        function startDeliveries() {
+            uploadScreen.classList.add('hidden');
+            deliveryScreen.classList.add('active');
+            showCurrentDelivery();
+        }
+
+        function showCurrentDelivery() {
+            if (currentIndex >= deliveries.length) {
+                showCompletion();
+                return;
+            }
+
+            const delivery = deliveries[currentIndex];
+            
+            document.getElementById('progressText').textContent = 
+                `Livraison ${currentIndex + 1} sur ${deliveries.length}`;
+            document.getElementById('clientName').textContent = delivery.name;
+            document.getElementById('clientAddress').textContent = delivery.address;
+            document.getElementById('clientPhone').textContent = delivery.phone;
+
+            // Désactiver le bouton "Précédente" si on est à la première livraison
+            const previousBtn = document.getElementById('previousBtn');
+            previousBtn.disabled = currentIndex === 0;
+        }
+
+        function showCompletion() {
+            deliveryScreen.classList.remove('active');
+            completionScreen.classList.add('active');
+            document.getElementById('totalDeliveries').textContent = deliveries.length;
+        }
+
+        // Bouton navigation
+        document.getElementById('navigateBtn').addEventListener('click', () => {
+            showNavigationMenu();
+        });
+
+        function showNavigationMenu() {
+            const delivery = deliveries[currentIndex];
+            const address = delivery.address;
+            
+            // Créer un menu modal pour choisir l'app
+            const modal = document.createElement('div');
+            modal.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: rgba(0,0,0,0.7);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 10000;
+                padding: 20px;
+            `;
+            
+            const menuContent = document.createElement('div');
+            menuContent.style.cssText = `
+                background: white;
+                border-radius: 20px;
+                padding: 30px;
+                max-width: 400px;
+                width: 100%;
+                box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            `;
+            
+            menuContent.innerHTML = `
+                <h3 style="margin: 0 0 20px 0; color: #667eea; text-align: center; font-size: 22px;">
+                    Choisir une application
+                </h3>
+                <p style="margin: 0 0 25px 0; color: #666; text-align: center; font-size: 14px;">
+                    ${address}
+                </p>
+                <div style="display: grid; gap: 15px;">
+                    <button id="wazeBtn" style="
+                        background: linear-gradient(135deg, #00d8ff 0%, #0088cc 100%);
+                        color: white;
+                        border: none;
+                        padding: 18px;
+                        border-radius: 12px;
+                        font-size: 16px;
+                        font-weight: 600;
+                        cursor: pointer;
+                        box-shadow: 0 4px 15px rgba(0, 216, 255, 0.4);
+                    ">
+                        🚗 Waze
+                    </button>
+                    <button id="gmapsBtn" style="
+                        background: linear-gradient(135deg, #4285f4 0%, #34a853 100%);
+                        color: white;
+                        border: none;
+                        padding: 18px;
+                        border-radius: 12px;
+                        font-size: 16px;
+                        font-weight: 600;
+                        cursor: pointer;
+                        box-shadow: 0 4px 15px rgba(66, 133, 244, 0.4);
+                    ">
+                        🗺️ Google Maps
+                    </button>
+                    <button id="appleMapsBtn" style="
+                        background: linear-gradient(135deg, #007aff 0%, #5856d6 100%);
+                        color: white;
+                        border: none;
+                        padding: 18px;
+                        border-radius: 12px;
+                        font-size: 16px;
+                        font-weight: 600;
+                        cursor: pointer;
+                        box-shadow: 0 4px 15px rgba(0, 122, 255, 0.4);
+                    ">
+                        🍎 Apple Plans
+                    </button>
+                    <button id="cancelBtn" style="
+                        background: white;
+                        color: #667eea;
+                        border: 2px solid #667eea;
+                        padding: 18px;
+                        border-radius: 12px;
+                        font-size: 16px;
+                        font-weight: 600;
+                        cursor: pointer;
+                        margin-top: 10px;
+                    ">
+                        Annuler
+                    </button>
+                </div>
+            `;
+            
+            modal.appendChild(menuContent);
+            document.body.appendChild(modal);
+            
+            // Encodage de l'adresse
+            const encodedAddress = encodeURIComponent(address);
+            
+            // Waze
+            document.getElementById('wazeBtn').onclick = () => {
+                const wazeUrl = `https://waze.com/ul?q=${encodedAddress}&navigate=yes`;
+                window.location.href = wazeUrl;
+                document.body.removeChild(modal);
+            };
+            
+            // Google Maps
+            document.getElementById('gmapsBtn').onclick = () => {
+                // Sur iOS, essayer d'ouvrir l'app Google Maps
+                const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+                if (isIOS) {
+                    const gmapsApp = `comgooglemaps://?q=${encodedAddress}`;
+                    const gmapsWeb = `https://www.google.com/maps/search/?api=1&query=${encodedAddress}`;
+                    
+                    // Essayer d'ouvrir l'app
+                    window.location.href = gmapsApp;
+                    
+                    // Fallback vers le web si l'app n'est pas installée
+                    setTimeout(() => {
+                        window.location.href = gmapsWeb;
+                    }, 500);
+                } else {
+                    window.location.href = `https://www.google.com/maps/search/?api=1&query=${encodedAddress}`;
+                }
+                document.body.removeChild(modal);
+            };
+            
+            // Apple Plans (iOS uniquement)
+            document.getElementById('appleMapsBtn').onclick = () => {
+                const appleMapsUrl = `maps://?q=${encodedAddress}`;
+                window.location.href = appleMapsUrl;
+                document.body.removeChild(modal);
+            };
+            
+            // Annuler
+            document.getElementById('cancelBtn').onclick = () => {
+                document.body.removeChild(modal);
+            };
+            
+            // Fermer en cliquant sur le fond
+            modal.onclick = (e) => {
+                if (e.target === modal) {
+                    document.body.removeChild(modal);
+                }
+            };
+        }
+
+        // Bouton appel
+        document.getElementById('callBtn').addEventListener('click', () => {
+            const delivery = deliveries[currentIndex];
+            const phone = delivery.phone.replace(/\s/g, '');
+            window.location.href = `tel:${phone}`;
+        });
+
+        // Bouton suivant
+        document.getElementById('nextBtn').addEventListener('click', () => {
+            currentIndex++;
+            showCurrentDelivery();
+        });
+
+        // Bouton précédent
+        document.getElementById('previousBtn').addEventListener('click', () => {
+            if (currentIndex > 0) {
+                currentIndex--;
+                showCurrentDelivery();
+            }
+        });
+
+        // Bouton reset
+        document.getElementById('resetBtn').addEventListener('click', () => {
+            location.reload();
+        });
+
+        // Bouton nouvelle tournée
+        document.getElementById('newRouteBtn').addEventListener('click', () => {
+            location.reload();
+        });
+
+        // Enregistrer le Service Worker pour PWA (optionnel)
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('data:text/javascript;base64,').catch(() => {});
+        }
+    </script>
+</body>
+</html>
