@@ -21,16 +21,19 @@
         };
 
         // Détection de configuration
-        window.FIREBASE_CONFIGURED = firebaseConfig.apiKey === "AIzaSyDOVy18OTzU7q8PKaSt3QoWxiR0UwUYGC8";
+        window.FIREBASE_CONFIGURED = firebaseConfig.apiKey !== "VOTRE_API_KEY";
         
         if (window.FIREBASE_CONFIGURED) {
+            console.log('🔥 Firebase détecté - Chargement des modules...');
             // Importer Firebase
             import('https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js').then(({ initializeApp }) => {
+                console.log('✅ Firebase App chargé');
                 return Promise.all([
                     import('https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js'),
                     import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js'),
                     import('https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js')
                 ]).then(modules => {
+                    console.log('✅ Tous les modules Firebase chargés');
                     const app = initializeApp(firebaseConfig);
                     const { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } = modules[0];
                     const { getFirestore, collection, addDoc, getDocs, query, where, orderBy, onSnapshot, doc, updateDoc, deleteDoc } = modules[1];
@@ -45,11 +48,24 @@
                         storageMethods: { ref, uploadBytes, getDownloadURL }
                     };
 
+                    console.log('✅ Firebase initialisé avec succès');
                     // Initialiser l'app après chargement Firebase
                     if (window.app) {
                         window.app.initFirebase();
                     }
+                }).catch(error => {
+                    console.error('❌ Erreur chargement modules Firebase:', error);
+                    window.FIREBASE_CONFIGURED = false;
+                    if (window.app) {
+                        window.app.initDemoMode();
+                    }
                 });
+            }).catch(error => {
+                console.error('❌ Erreur import Firebase App:', error);
+                window.FIREBASE_CONFIGURED = false;
+                if (window.app) {
+                    window.app.initDemoMode();
+                }
             });
         } else {
             console.warn('⚠️ Firebase non configuré - Mode démo activé');
@@ -1101,22 +1117,32 @@
             useFirebase: false,
 
             init() {
+                // Setup photo upload
+                document.getElementById('photoInput').addEventListener('change', (e) => {
+                    this.handlePhotoUpload(e);
+                });
+
+                // Timeout de sécurité pour éviter le chargement infini
+                setTimeout(() => {
+                    if (!this.useFirebase && window.FIREBASE_CONFIGURED) {
+                        console.warn('Firebase timeout - basculement en mode démo');
+                        this.initDemoMode();
+                    }
+                }, 3000); // 3 secondes max pour charger Firebase
+
                 // Check Firebase configuration
                 if (window.FIREBASE_CONFIGURED) {
                     // Firebase will call initFirebase when ready
                     this.showLoading(true);
                 } else {
-                    // Use demo mode
+                    // Use demo mode immediately
                     this.initDemoMode();
                 }
-                
-                // Setup photo upload
-                document.getElementById('photoInput').addEventListener('change', (e) => {
-                    this.handlePhotoUpload(e);
-                });
             },
 
             initFirebase() {
+                if (this.useFirebase) return; // Déjà initialisé
+                
                 this.useFirebase = true;
                 document.getElementById('firebaseWarning').style.display = 'none';
                 
@@ -1144,21 +1170,37 @@
             },
 
             async loadPublicListings() {
-                if (!this.useFirebase) return;
+                if (!this.useFirebase) {
+                    console.log('Mode local - pas de chargement Firebase');
+                    return;
+                }
 
-                const { collection, getDocs, orderBy, query } = window.firebase.dbMethods;
-                const q = query(collection(window.firebase.db, 'listings'), orderBy('createdAt', 'desc'));
-                const snapshot = await getDocs(q);
-                
-                this.listings = snapshot.docs.map(doc => ({
-                    id: doc.id,
-                    ...doc.data()
-                }));
+                try {
+                    console.log('📊 Chargement des annonces depuis Firestore...');
+                    const { collection, getDocs, orderBy, query } = window.firebase.dbMethods;
+                    const q = query(collection(window.firebase.db, 'listings'), orderBy('createdAt', 'desc'));
+                    const snapshot = await getDocs(q);
+                    
+                    this.listings = snapshot.docs.map(doc => ({
+                        id: doc.id,
+                        ...doc.data()
+                    }));
 
-                this.renderListings();
+                    console.log(`✅ ${this.listings.length} annonces chargées`);
+                    this.renderListings();
+                } catch (error) {
+                    console.error('❌ Erreur chargement annonces:', error);
+                    // En cas d'erreur, charger les données de démo
+                    this.createDemoData();
+                    this.renderListings();
+                }
             },
 
             initDemoMode() {
+                if (this.useFirebase === true) return; // Déjà en mode Firebase
+                if (this.listings.length > 0) return; // Déjà initialisé
+                
+                console.log('📦 Mode démo activé');
                 this.useFirebase = false;
                 this.loadData();
                 
