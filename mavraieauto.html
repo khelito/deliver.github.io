@@ -7,70 +7,11 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     
-    <!-- Firebase SDK -->
-    <script type="module">
-        // Configuration Firebase - MonAuto
-        const firebaseConfig = {
-            apiKey: "AIzaSyDOVy18OTzU7q8PKaSt3QoWxiR0UwUYGC8",
-            authDomain: "monauto-2e982.firebaseapp.com",
-            projectId: "monauto-2e982",
-            storageBucket: "monauto-2e982.firebasestorage.app",
-            messagingSenderId: "166805647628",
-            appId: "1:166805647628:web:195df18cf51ba06a835929",
-            measurementId: "G-9928FRRR9B"
-        };
-
-        // Détection de configuration
-        window.FIREBASE_CONFIGURED = firebaseConfig.apiKey !== "VOTRE_API_KEY";
-        
-        if (window.FIREBASE_CONFIGURED) {
-            console.log('🔥 Firebase détecté - Chargement des modules...');
-            // Importer Firebase
-            import('https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js').then(({ initializeApp }) => {
-                console.log('✅ Firebase App chargé');
-                return Promise.all([
-                    import('https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js'),
-                    import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js'),
-                    import('https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js')
-                ]).then(modules => {
-                    console.log('✅ Tous les modules Firebase chargés');
-                    const app = initializeApp(firebaseConfig);
-                    const { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } = modules[0];
-                    const { getFirestore, collection, addDoc, getDocs, query, where, orderBy, onSnapshot, doc, updateDoc, deleteDoc } = modules[1];
-                    const { getStorage, ref, uploadBytes, getDownloadURL } = modules[2];
-
-                    window.firebase = {
-                        auth: getAuth(app),
-                        db: getFirestore(app),
-                        storage: getStorage(app),
-                        authMethods: { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged },
-                        dbMethods: { collection, addDoc, getDocs, query, where, orderBy, onSnapshot, doc, updateDoc, deleteDoc },
-                        storageMethods: { ref, uploadBytes, getDownloadURL }
-                    };
-
-                    console.log('✅ Firebase initialisé avec succès');
-                    // Initialiser l'app après chargement Firebase
-                    if (window.app) {
-                        window.app.initFirebase();
-                    }
-                }).catch(error => {
-                    console.error('❌ Erreur chargement modules Firebase:', error);
-                    window.FIREBASE_CONFIGURED = false;
-                    if (window.app) {
-                        window.app.initDemoMode();
-                    }
-                });
-            }).catch(error => {
-                console.error('❌ Erreur import Firebase App:', error);
-                window.FIREBASE_CONFIGURED = false;
-                if (window.app) {
-                    window.app.initDemoMode();
-                }
-            });
-        } else {
-            console.warn('⚠️ Firebase non configuré - Mode démo activé');
-        }
-    </script>
+    <!-- Firebase v8 (Compat) - Fonctionne en file:// -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script>
     
     <style>
         * {
@@ -90,7 +31,6 @@
             --white: #FFFFFF;
             --success: #27AE60;
             --danger: #E74C3C;
-            --warning: #F39C12;
         }
 
         body {
@@ -98,52 +38,6 @@
             color: var(--text);
             background: var(--bg-light);
             line-height: 1.6;
-        }
-
-        /* Firebase Warning Banner */
-        .firebase-warning {
-            background: linear-gradient(135deg, var(--warning) 0%, #E67E22 100%);
-            color: white;
-            padding: 15px;
-            text-align: center;
-            font-weight: 600;
-            position: relative;
-        }
-
-        .firebase-warning a {
-            color: white;
-            text-decoration: underline;
-        }
-
-        /* Loading Overlay */
-        .loading-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(255, 255, 255, 0.95);
-            display: none;
-            align-items: center;
-            justify-content: center;
-            z-index: 9999;
-        }
-
-        .loading-overlay.active {
-            display: flex;
-        }
-
-        .spinner {
-            width: 50px;
-            height: 50px;
-            border: 5px solid var(--border);
-            border-top-color: var(--primary);
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-        }
-
-        @keyframes spin {
-            to { transform: rotate(360deg); }
         }
 
         /* Header */
@@ -822,33 +716,46 @@
             font-size: 64px;
             margin-bottom: 20px;
         }
-
-        .upload-progress {
-            margin-top: 10px;
-            height: 4px;
-            background: var(--border);
-            border-radius: 2px;
-            overflow: hidden;
-        }
-
-        .upload-progress-bar {
-            height: 100%;
-            background: var(--primary);
-            transition: width 0.3s;
-        }
     </style>
 </head>
 <body>
-    <!-- Firebase Warning -->
-    <div id="firebaseWarning" class="firebase-warning">
-        ⚠️ Firebase non configuré - Mode démo activé. 
-        <a href="#config-instructions" onclick="app.showFirebaseInstructions()">Voir les instructions de configuration</a>
+    <!-- Firebase Configuration Notice -->
+    <div id="firebaseNotice" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 12px; text-align: center; font-weight: 600; display: none;">
+        🔥 Mode Firebase activé - Données synchronisées dans le cloud
     </div>
 
-    <!-- Loading Overlay -->
-    <div id="loadingOverlay" class="loading-overlay">
-        <div class="spinner"></div>
-    </div>
+    <script>
+        // Configuration Firebase - REMPLACEZ PAR VOTRE CONFIGURATION
+        const firebaseConfig = {
+            apiKey: "AIzaSyDOVy18OTzU7q8PKaSt3QoWxiR0UwUYGC8",
+            authDomain: "monauto-2e982.firebaseapp.com",
+            projectId: "monauto-2e982",
+            storageBucket: "monauto-2e982.firebasestorage.app",
+            messagingSenderId: "166805647628",
+            appId: "1:166805647628:web:195df18cf51ba06a835929"
+        };
+
+        // Variables globales Firebase
+        window.firebaseApp = null;
+        window.useFirebase = false;
+
+        // Initialiser Firebase si disponible
+        if (typeof firebase !== 'undefined') {
+            try {
+                console.log('🔥 Initialisation Firebase...');
+                window.firebaseApp = firebase.initializeApp(firebaseConfig);
+                window.useFirebase = true;
+                console.log('✅ Firebase initialisé !');
+                document.getElementById('firebaseNotice').style.display = 'block';
+            } catch (error) {
+                console.warn('⚠️ Firebase non disponible:', error.message);
+                console.log('📦 Mode LocalStorage activé');
+                window.useFirebase = false;
+            }
+        } else {
+            console.log('📦 Firebase non chargé - Mode LocalStorage');
+        }
+    </script>
 
     <!-- Header -->
     <header class="header">
@@ -1036,9 +943,6 @@
                             <p style="font-size: 13px; color: var(--text-light); margin-top: 5px;">Jusqu'à 10 photos</p>
                         </div>
                         <div id="photoPreview" class="photo-preview"></div>
-                        <div id="uploadProgress" class="upload-progress hidden">
-                            <div id="uploadProgressBar" class="upload-progress-bar" style="width: 0%"></div>
-                        </div>
                     </div>
 
                     <button type="submit" class="btn btn-primary" style="width: 100%; padding: 15px; font-size: 16px;">
@@ -1112,105 +1016,72 @@
             listings: [],
             messages: {},
             selectedPhotos: [],
-            selectedPhotoFiles: [],
             currentConversation: null,
-            useFirebase: false,
 
             init() {
+                // Load data from localStorage
+                this.loadData();
+                
                 // Setup photo upload
                 document.getElementById('photoInput').addEventListener('change', (e) => {
                     this.handlePhotoUpload(e);
                 });
 
-                // Timeout de sécurité pour éviter le chargement infini
-                setTimeout(() => {
-                    if (!this.useFirebase && window.FIREBASE_CONFIGURED) {
-                        console.warn('Firebase timeout - basculement en mode démo');
-                        this.initDemoMode();
-                    }
-                }, 3000); // 3 secondes max pour charger Firebase
-
-                // Check Firebase configuration
-                if (window.FIREBASE_CONFIGURED) {
-                    // Firebase will call initFirebase when ready
-                    this.showLoading(true);
-                } else {
-                    // Use demo mode immediately
-                    this.initDemoMode();
-                }
-            },
-
-            initFirebase() {
-                if (this.useFirebase) return; // Déjà initialisé
-                
-                this.useFirebase = true;
-                document.getElementById('firebaseWarning').style.display = 'none';
-                
-                // Listen to auth state
-                window.firebase.authMethods.onAuthStateChanged(window.firebase.auth, (user) => {
-                    if (user) {
-                        this.currentUser = {
-                            uid: user.uid,
-                            email: user.email,
-                            name: user.displayName || user.email.split('@')[0]
-                        };
-                        this.loadFirebaseData();
-                    } else {
-                        this.currentUser = null;
+                // Si Firebase est disponible, écouter l'auth
+                if (window.useFirebase) {
+                    console.log('👤 Configuration de l\'authentification Firebase...');
+                    firebase.auth().onAuthStateChanged((user) => {
+                        if (user) {
+                            this.currentUser = {
+                                uid: user.uid,
+                                name: user.displayName || user.email.split('@')[0],
+                                email: user.email,
+                                phone: '06 12 34 56 78'
+                            };
+                            this.loadFirebaseListings();
+                        } else {
+                            this.currentUser = null;
+                        }
                         this.updateAuthUI();
-                        this.loadPublicListings();
-                    }
-                    this.showLoading(false);
-                });
-            },
-
-            async loadFirebaseData() {
-                this.updateAuthUI();
-                await this.loadPublicListings();
-            },
-
-            async loadPublicListings() {
-                if (!this.useFirebase) {
-                    console.log('Mode local - pas de chargement Firebase');
-                    return;
+                    });
                 }
 
+                // Initialize demo data if first visit
+                if (this.listings.length === 0) {
+                    this.createDemoData();
+                }
+
+                // Show listings
+                this.renderListings();
+                this.updateAuthUI();
+            },
+
+            async loadFirebaseListings() {
+                if (!window.useFirebase) return;
+                
                 try {
-                    console.log('📊 Chargement des annonces depuis Firestore...');
-                    const { collection, getDocs, orderBy, query } = window.firebase.dbMethods;
-                    const q = query(collection(window.firebase.db, 'listings'), orderBy('createdAt', 'desc'));
-                    const snapshot = await getDocs(q);
+                    console.log('📊 Chargement des annonces Firebase...');
+                    const snapshot = await firebase.firestore()
+                        .collection('listings')
+                        .orderBy('createdAt', 'desc')
+                        .get();
                     
                     this.listings = snapshot.docs.map(doc => ({
                         id: doc.id,
                         ...doc.data()
                     }));
-
-                    console.log(`✅ ${this.listings.length} annonces chargées`);
+                    
+                    console.log(`✅ ${this.listings.length} annonces chargées depuis Firebase`);
                     this.renderListings();
                 } catch (error) {
-                    console.error('❌ Erreur chargement annonces:', error);
-                    // En cas d'erreur, charger les données de démo
-                    this.createDemoData();
+                    console.error('Erreur Firebase:', error);
+                    // Fallback vers localStorage
+                    this.loadData();
+                    if (this.listings.length === 0) {
+                        this.createDemoData();
+                    }
                     this.renderListings();
                 }
-            },
-
-            initDemoMode() {
-                if (this.useFirebase === true) return; // Déjà en mode Firebase
-                if (this.listings.length > 0) return; // Déjà initialisé
-                
-                console.log('📦 Mode démo activé');
-                this.useFirebase = false;
-                this.loadData();
-                
-                if (this.listings.length === 0) {
-                    this.createDemoData();
-                }
-
-                this.renderListings();
-                this.updateAuthUI();
-                this.showLoading(false);
             },
 
             loadData() {
@@ -1220,7 +1091,6 @@
             },
 
             saveData() {
-                if (this.useFirebase) return;
                 localStorage.setItem('monauto_listings', JSON.stringify(this.listings));
                 localStorage.setItem('monauto_messages', JSON.stringify(this.messages));
                 if (this.currentUser) {
@@ -1228,14 +1098,10 @@
                 }
             },
 
-            showLoading(show) {
-                document.getElementById('loadingOverlay').classList.toggle('active', show);
-            },
-
             createDemoData() {
                 const demoListings = [
                     {
-                        id: 'demo-' + Date.now() + '-1',
+                        id: Date.now() + 1,
                         brand: 'Peugeot',
                         model: '308',
                         year: 2020,
@@ -1257,7 +1123,7 @@
                         createdAt: Date.now() - 86400000
                     },
                     {
-                        id: 'demo-' + Date.now() + '-2',
+                        id: Date.now() + 2,
                         brand: 'Renault',
                         model: 'Clio',
                         year: 2019,
@@ -1279,7 +1145,7 @@
                         createdAt: Date.now() - 172800000
                     },
                     {
-                        id: 'demo-' + Date.now() + '-3',
+                        id: Date.now() + 3,
                         brand: 'BMW',
                         model: 'Série 3',
                         year: 2021,
@@ -1337,7 +1203,7 @@
                 }
 
                 grid.innerHTML = listingsToShow.map(listing => `
-                    <div class="listing-card" onclick="app.showDetail('${listing.id}')">
+                    <div class="listing-card" onclick="app.showDetail(${listing.id})">
                         <img src="${listing.photos[0]}" alt="${listing.brand} ${listing.model}" class="listing-image" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22400%22 height=%22300%22%3E%3Crect fill=%22%23f0f0f0%22 width=%22400%22 height=%22300%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 dominant-baseline=%22middle%22 text-anchor=%22middle%22 font-family=%22sans-serif%22 font-size=%2224%22 fill=%22%23999%22%3E🚗 ${listing.brand}%3C/text%3E%3C/svg%3E'">
                         <div class="listing-content">
                             <div class="listing-price">${listing.price.toLocaleString('fr-FR')} €</div>
@@ -1425,7 +1291,7 @@
                             </div>
                             <div>
                                 ${this.currentUser ? `
-                                    <button class="btn btn-primary" onclick="app.contactSeller('${listing.id}')">
+                                    <button class="btn btn-primary" onclick="app.contactSeller(${listing.id})">
                                         💬 Contacter
                                     </button>
                                 ` : `
@@ -1469,7 +1335,6 @@
                     return;
                 }
                 this.selectedPhotos = [];
-                this.selectedPhotoFiles = [];
                 document.getElementById('createListingForm').reset();
                 document.getElementById('photoPreview').innerHTML = '';
                 document.getElementById('createListingModal').classList.add('active');
@@ -1478,14 +1343,12 @@
             handlePhotoUpload(event) {
                 const files = Array.from(event.target.files);
                 
-                if (this.selectedPhotoFiles.length + files.length > 10) {
+                if (this.selectedPhotos.length + files.length > 10) {
                     alert('Maximum 10 photos autorisées');
                     return;
                 }
 
                 files.forEach(file => {
-                    this.selectedPhotoFiles.push(file);
-                    
                     const reader = new FileReader();
                     reader.onload = (e) => {
                         this.selectedPhotos.push(e.target.result);
@@ -1507,11 +1370,10 @@
 
             removePhoto(index) {
                 this.selectedPhotos.splice(index, 1);
-                this.selectedPhotoFiles.splice(index, 1);
                 this.renderPhotoPreview();
             },
 
-            async createListing(event) {
+            createListing(event) {
                 event.preventDefault();
                 
                 if (this.selectedPhotos.length === 0) {
@@ -1519,12 +1381,10 @@
                     return;
                 }
 
-                this.showLoading(true);
-
                 const formData = new FormData(event.target);
                 const location = formData.get('location');
 
-                // Geocode location (simplified)
+                // Geocode location (simplified - using approximate coordinates)
                 const cities = {
                     'Nantes': { lat: 47.218371, lng: -1.553621 },
                     'Paris': { lat: 48.856614, lng: 2.352222 },
@@ -1535,16 +1395,8 @@
 
                 const coords = cities[location] || { lat: 47.218371, lng: -1.553621 };
 
-                let photoUrls = [];
-
-                if (this.useFirebase) {
-                    // Upload photos to Firebase Storage
-                    photoUrls = await this.uploadPhotosToFirebase();
-                } else {
-                    photoUrls = this.selectedPhotos;
-                }
-
                 const listing = {
+                    id: Date.now(),
                     brand: formData.get('brand'),
                     model: formData.get('model'),
                     year: parseInt(formData.get('year')),
@@ -1557,56 +1409,20 @@
                     lat: coords.lat,
                     lng: coords.lng,
                     description: formData.get('description'),
-                    photos: photoUrls,
+                    photos: [...this.selectedPhotos],
                     seller: {
-                        uid: this.currentUser.uid || this.currentUser.email,
                         name: this.currentUser.name,
                         email: this.currentUser.email,
-                        phone: this.currentUser.phone || '06 12 34 56 78'
+                        phone: this.currentUser.phone
                     },
                     createdAt: Date.now()
                 };
 
-                if (this.useFirebase) {
-                    // Save to Firestore
-                    const { collection, addDoc } = window.firebase.dbMethods;
-                    await addDoc(collection(window.firebase.db, 'listings'), listing);
-                    await this.loadPublicListings();
-                } else {
-                    listing.id = Date.now();
-                    this.listings.unshift(listing);
-                    this.saveData();
-                    this.renderListings();
-                }
-
-                this.showLoading(false);
+                this.listings.unshift(listing);
+                this.saveData();
+                this.renderListings();
                 this.closeModal('createListingModal');
                 alert('✅ Annonce créée avec succès !');
-            },
-
-            async uploadPhotosToFirebase() {
-                const { ref, uploadBytes, getDownloadURL } = window.firebase.storageMethods;
-                const urls = [];
-                const progressBar = document.getElementById('uploadProgressBar');
-                const progressContainer = document.getElementById('uploadProgress');
-                
-                progressContainer.classList.remove('hidden');
-
-                for (let i = 0; i < this.selectedPhotoFiles.length; i++) {
-                    const file = this.selectedPhotoFiles[i];
-                    const fileName = `listings/${Date.now()}_${i}_${file.name}`;
-                    const storageRef = ref(window.firebase.storage, fileName);
-                    
-                    await uploadBytes(storageRef, file);
-                    const url = await getDownloadURL(storageRef);
-                    urls.push(url);
-
-                    const progress = ((i + 1) / this.selectedPhotoFiles.length) * 100;
-                    progressBar.style.width = progress + '%';
-                }
-
-                progressContainer.classList.add('hidden');
-                return urls;
             },
 
             contactSeller(listingId) {
@@ -1660,6 +1476,7 @@
 
                 list.innerHTML = userConversations.map(([id, conv]) => {
                     const listing = this.listings.find(l => l.id === conv.listingId);
+                    const otherEmail = conv.participants.find(p => p !== this.currentUser.email);
                     const lastMessage = conv.messages[conv.messages.length - 1];
 
                     return `
@@ -1741,9 +1558,7 @@
                 document.getElementById('messagesPage').classList.add('hidden');
                 document.getElementById('profilePage').classList.remove('hidden');
 
-                const myListings = this.listings.filter(l => 
-                    l.seller.email === this.currentUser.email || l.seller.uid === this.currentUser.uid
-                );
+                const myListings = this.listings.filter(l => l.seller.email === this.currentUser.email);
                 const container = document.getElementById('myListings');
 
                 if (myListings.length === 0) {
@@ -1762,7 +1577,7 @@
                 container.innerHTML = `
                     <div class="listings-grid">
                         ${myListings.map(listing => `
-                            <div class="listing-card" onclick="app.showDetail('${listing.id}')">
+                            <div class="listing-card" onclick="app.showDetail(${listing.id})">
                                 <img src="${listing.photos[0]}" alt="${listing.brand} ${listing.model}" class="listing-image">
                                 <div class="listing-content">
                                     <div class="listing-price">${listing.price.toLocaleString('fr-FR')} €</div>
@@ -1809,12 +1624,10 @@
                 event.preventDefault();
                 const formData = new FormData(event.target);
                 
-                if (this.useFirebase) {
-                    this.showLoading(true);
+                if (window.useFirebase) {
+                    // Connexion avec Firebase
                     try {
-                        const { signInWithEmailAndPassword } = window.firebase.authMethods;
-                        await signInWithEmailAndPassword(
-                            window.firebase.auth,
+                        await firebase.auth().signInWithEmailAndPassword(
                             formData.get('email'),
                             formData.get('password')
                         );
@@ -1823,14 +1636,14 @@
                     } catch (error) {
                         alert('❌ Erreur : ' + error.message);
                     }
-                    this.showLoading(false);
                 } else {
-                    // Demo mode
+                    // Simplified login (no real authentication)
                     this.currentUser = {
                         name: formData.get('email').split('@')[0],
                         email: formData.get('email'),
                         phone: '06 12 34 56 78'
                     };
+
                     this.saveData();
                     this.updateAuthUI();
                     this.closeModal('loginModal');
@@ -1842,36 +1655,31 @@
                 event.preventDefault();
                 const formData = new FormData(event.target);
                 
-                if (this.useFirebase) {
-                    this.showLoading(true);
+                if (window.useFirebase) {
+                    // Inscription avec Firebase
                     try {
-                        const { createUserWithEmailAndPassword } = window.firebase.authMethods;
-                        const userCredential = await createUserWithEmailAndPassword(
-                            window.firebase.auth,
+                        const userCredential = await firebase.auth().createUserWithEmailAndPassword(
                             formData.get('email'),
                             formData.get('password')
                         );
                         
-                        this.currentUser = {
-                            uid: userCredential.user.uid,
-                            name: formData.get('name'),
-                            email: formData.get('email'),
-                            phone: formData.get('phone')
-                        };
+                        await userCredential.user.updateProfile({
+                            displayName: formData.get('name')
+                        });
                         
                         this.closeModal('registerModal');
                         alert('✅ Inscription réussie !');
                     } catch (error) {
                         alert('❌ Erreur : ' + error.message);
                     }
-                    this.showLoading(false);
                 } else {
-                    // Demo mode
+                    // Mode localStorage
                     this.currentUser = {
                         name: formData.get('name'),
                         email: formData.get('email'),
                         phone: formData.get('phone')
                     };
+
                     this.saveData();
                     this.updateAuthUI();
                     this.closeModal('registerModal');
@@ -1880,8 +1688,8 @@
             },
 
             async logout() {
-                if (this.useFirebase) {
-                    await window.firebase.authMethods.signOut(window.firebase.auth);
+                if (window.useFirebase) {
+                    await firebase.auth().signOut();
                 } else {
                     this.currentUser = null;
                     localStorage.removeItem('monauto_user');
@@ -1935,23 +1743,6 @@
 
             closeModal(modalId) {
                 document.getElementById(modalId).classList.remove('active');
-            },
-
-            showFirebaseInstructions() {
-                alert(`📝 INSTRUCTIONS DE CONFIGURATION FIREBASE
-
-1. Allez sur https://console.firebase.google.com/
-2. Créez un nouveau projet (nom: MonAuto)
-3. Dans "Authentication" > Activez "Email/Password"
-4. Dans "Firestore Database" > Créez une base (mode test)
-5. Dans "Storage" > Activez le stockage
-6. Dans "Paramètres du projet" > "Vos applications"
-7. Cliquez sur "Web" (</>)
-8. Copiez la configuration firebaseConfig
-9. Collez-la dans le code HTML (ligne ~30)
-10. Rechargez la page !
-
-Le site fonctionnera alors avec une vraie base de données cloud ! 🚀`);
             }
         };
 
