@@ -1019,17 +1019,19 @@
             currentConversation: null,
 
             init() {
-                // Load data from localStorage
-                this.loadData();
-                
                 // Setup photo upload
                 document.getElementById('photoInput').addEventListener('change', (e) => {
                     this.handlePhotoUpload(e);
                 });
 
-                // Si Firebase est disponible, écouter l'auth
+                // Si Firebase est disponible, charger les annonces publiques
                 if (window.useFirebase) {
                     console.log('👤 Configuration de l\'authentification Firebase...');
+                    
+                    // Charger les annonces publiques AVANT l'auth
+                    this.loadFirebaseListings();
+                    
+                    // Écouter les changements d'authentification
                     firebase.auth().onAuthStateChanged((user) => {
                         if (user) {
                             this.currentUser = {
@@ -1038,22 +1040,23 @@
                                 email: user.email,
                                 phone: '06 12 34 56 78'
                             };
-                            this.loadFirebaseListings();
                         } else {
                             this.currentUser = null;
                         }
                         this.updateAuthUI();
                     });
+                } else {
+                    // Mode localStorage uniquement
+                    this.loadData();
+                    
+                    // Initialize demo data if first visit
+                    if (this.listings.length === 0) {
+                        this.createDemoData();
+                    }
+                    
+                    this.renderListings();
+                    this.updateAuthUI();
                 }
-
-                // Initialize demo data if first visit
-                if (this.listings.length === 0) {
-                    this.createDemoData();
-                }
-
-                // Show listings
-                this.renderListings();
-                this.updateAuthUI();
             },
 
             async loadFirebaseListings() {
@@ -1074,12 +1077,9 @@
                     console.log(`✅ ${this.listings.length} annonces chargées depuis Firebase`);
                     this.renderListings();
                 } catch (error) {
-                    console.error('Erreur Firebase:', error);
-                    // Fallback vers localStorage
-                    this.loadData();
-                    if (this.listings.length === 0) {
-                        this.createDemoData();
-                    }
+                    console.error('❌ Erreur chargement Firebase:', error);
+                    // En cas d'erreur, afficher un message vide (pas de démo)
+                    this.listings = [];
                     this.renderListings();
                 }
             },
