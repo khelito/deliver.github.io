@@ -319,6 +319,15 @@
         }
 
         /* Detail Page */
+        #detailPage {
+            animation: fadeIn 0.3s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
         .detail-gallery {
             position: relative;
             background: #000;
@@ -841,6 +850,16 @@
             <button class="btn btn-secondary" onclick="app.logout()">Se déconnecter</button>
         </div>
 
+        <!-- Detail Page -->
+        <div id="detailPage" class="hidden">
+            <div style="margin-bottom: 20px;">
+                <button class="btn btn-secondary" onclick="app.closeDetail()" style="display: inline-flex; align-items: center; gap: 8px;">
+                    ← Retour aux annonces
+                </button>
+            </div>
+            <div id="detailContent"></div>
+        </div>
+
         <!-- Messages Page -->
         <div id="messagesPage" class="hidden">
             <h2 style="margin-bottom: 20px;">Messages</h2>
@@ -853,14 +872,6 @@
                     </div>
                 </div>
             </div>
-        </div>
-    </div>
-
-    <!-- Detail Modal -->
-    <div id="detailModal" class="modal">
-        <div class="modal-content">
-            <button class="modal-close" onclick="app.closeModal('detailModal')">×</button>
-            <div id="detailContent"></div>
         </div>
     </div>
 
@@ -1227,89 +1238,99 @@
                 const listing = this.listings.find(l => l.id === id);
                 if (!listing) return;
 
-                const modal = document.getElementById('detailModal');
+                // Cacher toutes les autres pages
+                document.getElementById('homePage').classList.add('hidden');
+                document.getElementById('profilePage').classList.add('hidden');
+                document.getElementById('messagesPage').classList.add('hidden');
+                
+                // Afficher la page de détail
+                document.getElementById('detailPage').classList.remove('hidden');
+                
+                // Scroll en haut de la page
+                window.scrollTo(0, 0);
+
                 const content = document.getElementById('detailContent');
 
                 content.innerHTML = `
-                    <div class="detail-gallery">
-                        <img src="${listing.photos[0]}" alt="${listing.brand} ${listing.model}" class="detail-main-image" id="mainImage">
-                        ${listing.photos.length > 1 ? `
-                            <div class="detail-thumbnails">
-                                ${listing.photos.map((photo, i) => `
-                                    <img src="${photo}" class="thumbnail ${i === 0 ? 'active' : ''}" 
-                                         onclick="app.changeMainImage('${photo}', event)">
-                                `).join('')}
+                    <div style="background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.08);">
+                        <div class="detail-gallery">
+                            <img src="${listing.photos[0]}" alt="${listing.brand} ${listing.model}" class="detail-main-image" id="mainImage">
+                            ${listing.photos.length > 1 ? `
+                                <div class="detail-thumbnails">
+                                    ${listing.photos.map((photo, i) => `
+                                        <img src="${photo}" class="thumbnail ${i === 0 ? 'active' : ''}" 
+                                             onclick="app.changeMainImage('${photo}', event)">
+                                    `).join('')}
+                                </div>
+                            ` : ''}
+                        </div>
+                        <div class="detail-info">
+                            <div class="detail-header">
+                                <div>
+                                    <h1 class="detail-title">${listing.brand} ${listing.model}</h1>
+                                    <div class="listing-details" style="font-size: 16px;">
+                                        <span>${listing.year}</span>
+                                        <span>•</span>
+                                        <span>${listing.mileage.toLocaleString('fr-FR')} km</span>
+                                    </div>
+                                </div>
+                                <div class="detail-price">${listing.price.toLocaleString('fr-FR')} €</div>
                             </div>
-                        ` : ''}
-                    </div>
-                    <div class="detail-info">
-                        <div class="detail-header">
-                            <div>
-                                <h1 class="detail-title">${listing.brand} ${listing.model}</h1>
-                                <div class="listing-details" style="font-size: 16px;">
-                                    <span>${listing.year}</span>
-                                    <span>•</span>
-                                    <span>${listing.mileage.toLocaleString('fr-FR')} km</span>
+
+                            <div class="detail-specs">
+                                <div class="spec-item">
+                                    <div class="spec-label">Carburant</div>
+                                    <div class="spec-value">${listing.fuel}</div>
+                                </div>
+                                <div class="spec-item">
+                                    <div class="spec-label">Boîte</div>
+                                    <div class="spec-value">${listing.transmission}</div>
+                                </div>
+                                <div class="spec-item">
+                                    <div class="spec-label">Puissance</div>
+                                    <div class="spec-value">${listing.power || '-'} CV</div>
+                                </div>
+                                <div class="spec-item">
+                                    <div class="spec-label">Année</div>
+                                    <div class="spec-value">${listing.year}</div>
                                 </div>
                             </div>
-                            <div class="detail-price">${listing.price.toLocaleString('fr-FR')} €</div>
-                        </div>
 
-                        <div class="detail-specs">
-                            <div class="spec-item">
-                                <div class="spec-label">Carburant</div>
-                                <div class="spec-value">${listing.fuel}</div>
+                            <div class="detail-description">
+                                <h3>Description</h3>
+                                <p>${listing.description || 'Aucune description disponible.'}</p>
                             </div>
-                            <div class="spec-item">
-                                <div class="spec-label">Boîte</div>
-                                <div class="spec-value">${listing.transmission}</div>
-                            </div>
-                            <div class="spec-item">
-                                <div class="spec-label">Puissance</div>
-                                <div class="spec-value">${listing.power || '-'} CV</div>
-                            </div>
-                            <div class="spec-item">
-                                <div class="spec-label">Année</div>
-                                <div class="spec-value">${listing.year}</div>
-                            </div>
-                        </div>
 
-                        <div class="detail-description">
-                            <h3>Description</h3>
-                            <p>${listing.description || 'Aucune description disponible.'}</p>
-                        </div>
-
-                        <div class="detail-seller">
-                            <div class="seller-info">
-                                <div class="seller-avatar">${listing.seller.name.charAt(0)}</div>
-                                <div class="seller-details">
-                                    <h4>${listing.seller.name}</h4>
-                                    <p style="color: var(--text-light); font-size: 14px;">
-                                        📍 ${listing.location}
-                                    </p>
+                            <div class="detail-seller">
+                                <div class="seller-info">
+                                    <div class="seller-avatar">${listing.seller.name.charAt(0)}</div>
+                                    <div class="seller-details">
+                                        <h4>${listing.seller.name}</h4>
+                                        <p style="color: var(--text-light); font-size: 14px;">
+                                            📍 ${listing.location}
+                                        </p>
+                                    </div>
+                                </div>
+                                <div>
+                                    ${this.currentUser ? `
+                                        <button class="btn btn-primary" onclick="app.contactSeller('${listing.id}')">
+                                            💬 Contacter
+                                        </button>
+                                    ` : `
+                                        <button class="btn btn-primary" onclick="app.showLogin()">
+                                            Connectez-vous pour contacter
+                                        </button>
+                                    `}
+                                    <a href="tel:${listing.seller.phone}" class="btn btn-secondary" style="margin-top: 10px; display: inline-block; text-decoration: none;">
+                                        📞 ${listing.seller.phone}
+                                    </a>
                                 </div>
                             </div>
-                            <div>
-                                ${this.currentUser ? `
-                                    <button class="btn btn-primary" onclick="app.contactSeller(${listing.id})">
-                                        💬 Contacter
-                                    </button>
-                                ` : `
-                                    <button class="btn btn-primary" onclick="app.showLogin()">
-                                        Connectez-vous pour contacter
-                                    </button>
-                                `}
-                                <a href="tel:${listing.seller.phone}" class="btn btn-secondary" style="margin-top: 10px; display: inline-block; text-decoration: none;">
-                                    📞 ${listing.seller.phone}
-                                </a>
-                            </div>
-                        </div>
 
-                        <div id="detailMap" class="detail-map"></div>
+                            <div id="detailMap" class="detail-map"></div>
+                        </div>
                     </div>
                 `;
-
-                modal.classList.add('active');
 
                 // Initialize map
                 setTimeout(() => {
@@ -1321,6 +1342,11 @@
                         .bindPopup(`<b>${listing.brand} ${listing.model}</b><br>${listing.location}`)
                         .openPopup();
                 }, 100);
+            },
+
+            closeDetail() {
+                document.getElementById('detailPage').classList.add('hidden');
+                this.showHome();
             },
 
             changeMainImage(src, event) {
@@ -1462,7 +1488,7 @@
                     this.saveData();
                 }
 
-                this.closeModal('detailModal');
+                this.closeDetail();
                 this.showMessages();
                 this.openConversation(conversationId);
             },
