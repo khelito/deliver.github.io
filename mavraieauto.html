@@ -1373,7 +1373,7 @@
                 this.renderPhotoPreview();
             },
 
-            createListing(event) {
+            async createListing(event) {
                 event.preventDefault();
                 
                 if (this.selectedPhotos.length === 0) {
@@ -1396,7 +1396,6 @@
                 const coords = cities[location] || { lat: 47.218371, lng: -1.553621 };
 
                 const listing = {
-                    id: Date.now(),
                     brand: formData.get('brand'),
                     model: formData.get('model'),
                     year: parseInt(formData.get('year')),
@@ -1413,16 +1412,39 @@
                     seller: {
                         name: this.currentUser.name,
                         email: this.currentUser.email,
-                        phone: this.currentUser.phone
+                        phone: this.currentUser.phone || '06 12 34 56 78'
                     },
                     createdAt: Date.now()
                 };
 
-                this.listings.unshift(listing);
-                this.saveData();
-                this.renderListings();
-                this.closeModal('createListingModal');
-                alert('✅ Annonce créée avec succès !');
+                if (window.useFirebase) {
+                    // Sauvegarder dans Firebase
+                    try {
+                        console.log('💾 Sauvegarde dans Firebase...');
+                        const docRef = await firebase.firestore()
+                            .collection('listings')
+                            .add(listing);
+                        
+                        console.log('✅ Annonce sauvegardée avec ID:', docRef.id);
+                        
+                        // Recharger les annonces depuis Firebase
+                        await this.loadFirebaseListings();
+                        
+                        this.closeModal('createListingModal');
+                        alert('✅ Annonce créée avec succès !');
+                    } catch (error) {
+                        console.error('❌ Erreur Firebase:', error);
+                        alert('❌ Erreur lors de la création: ' + error.message);
+                    }
+                } else {
+                    // Mode localStorage
+                    listing.id = Date.now();
+                    this.listings.unshift(listing);
+                    this.saveData();
+                    this.renderListings();
+                    this.closeModal('createListingModal');
+                    alert('✅ Annonce créée avec succès !');
+                }
             },
 
             contactSeller(listingId) {
