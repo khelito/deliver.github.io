@@ -728,13 +728,8 @@
     </style>
 </head>
 <body>
-    <!-- Firebase Configuration Notice -->
-    <div id="firebaseNotice" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 12px; text-align: center; font-weight: 600; display: none;">
-        🔥 Mode Firebase activé - Données synchronisées dans le cloud
-    </div>
-
     <script>
-        // Configuration Firebase - REMPLACEZ PAR VOTRE CONFIGURATION
+        // Configuration Firebase
         const firebaseConfig = {
             apiKey: "AIzaSyDOVy18OTzU7q8PKaSt3QoWxiR0UwUYGC8",
             authDomain: "monauto-2e982.firebaseapp.com",
@@ -755,7 +750,6 @@
                 window.firebaseApp = firebase.initializeApp(firebaseConfig);
                 window.useFirebase = true;
                 console.log('✅ Firebase initialisé !');
-                document.getElementById('firebaseNotice').style.display = 'block';
             } catch (error) {
                 console.warn('⚠️ Firebase non disponible:', error.message);
                 console.log('📦 Mode LocalStorage activé');
