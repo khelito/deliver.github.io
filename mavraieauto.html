@@ -1214,7 +1214,7 @@
                 }
 
                 grid.innerHTML = listingsToShow.map(listing => `
-                    <div class="listing-card" onclick="app.showDetail(${listing.id})">
+                    <div class="listing-card" onclick="app.showDetail('${listing.id}')">
                         <img src="${listing.photos[0]}" alt="${listing.brand} ${listing.model}" class="listing-image" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22400%22 height=%22300%22%3E%3Crect fill=%22%23f0f0f0%22 width=%22400%22 height=%22300%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 dominant-baseline=%22middle%22 text-anchor=%22middle%22 font-family=%22sans-serif%22 font-size=%2224%22 fill=%22%23999%22%3E🚗 ${listing.brand}%3C/text%3E%3C/svg%3E'">
                         <div class="listing-content">
                             <div class="listing-price">${listing.price.toLocaleString('fr-FR')} €</div>
@@ -1334,13 +1334,28 @@
 
                 // Initialize map
                 setTimeout(() => {
-                    const map = L.map('detailMap').setView([listing.lat, listing.lng], 13);
-                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                        attribution: '© OpenStreetMap contributors'
-                    }).addTo(map);
-                    L.marker([listing.lat, listing.lng]).addTo(map)
-                        .bindPopup(`<b>${listing.brand} ${listing.model}</b><br>${listing.location}`)
-                        .openPopup();
+                    try {
+                        // Vérifier que Leaflet est chargé
+                        if (typeof L === 'undefined') {
+                            console.warn('Leaflet non chargé - carte désactivée');
+                            return;
+                        }
+                        
+                        const map = L.map('detailMap').setView([listing.lat, listing.lng], 13);
+                        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                            attribution: '© OpenStreetMap contributors'
+                        }).addTo(map);
+                        L.marker([listing.lat, listing.lng]).addTo(map)
+                            .bindPopup(`<b>${listing.brand} ${listing.model}</b><br>${listing.location}`)
+                            .openPopup();
+                    } catch (error) {
+                        console.error('Erreur initialisation carte:', error);
+                        document.getElementById('detailMap').innerHTML = `
+                            <div style="display: flex; align-items: center; justify-content: center; height: 100%; background: var(--bg-light); border-radius: 12px;">
+                                <p style="color: var(--text-light);">📍 ${listing.location}</p>
+                            </div>
+                        `;
+                    }
                 }, 100);
             },
 
@@ -1625,7 +1640,7 @@
                 container.innerHTML = `
                     <div class="listings-grid">
                         ${myListings.map(listing => `
-                            <div class="listing-card" onclick="app.showDetail(${listing.id})">
+                            <div class="listing-card" onclick="app.showDetail('${listing.id}')">
                                 <img src="${listing.photos[0]}" alt="${listing.brand} ${listing.model}" class="listing-image">
                                 <div class="listing-content">
                                     <div class="listing-price">${listing.price.toLocaleString('fr-FR')} €</div>
